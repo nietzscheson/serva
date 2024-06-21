@@ -1,0 +1,15 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    #- /var/lib/docker/containers/*/*.log
+    - /var/log/*.log
+
+# output.logstash:
+#   hosts: ["logstash:5044"]
+
+output.redis:
+  hosts: ["redis:6379"]
+  key: "filebeat"
+  db: 0
+  timeout: 5

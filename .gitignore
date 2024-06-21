@@ -12,3 +12,5 @@ terraform.tfstate.backup
 remote-debug-profile
 db.sqlite*
 .db.sqlite*
+*.log
+.venv
