@@ -1,37 +1,73 @@
 services:
-  zookeeper:
-    image: "confluentinc/cp-zookeeper"
-    hostname: zookeeper
-    container_name: zookeeper
+  app:
+    container_name: app
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    volumes:
+      - ./var/log:/var/log
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.17.0
+    container_name: filebeat
+    volumes:
+      - ./ekl/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      #- /var/lib/docker/containers:/var/lib/docker/containers:ro
+      #- /var/run/docker.sock:/var/run/docker.sock
+      - ./var/log:/var/log
+
+    command: >
+      sh -c "chmod go-w /usr/share/filebeat/filebeat.yml &&
+             filebeat -e -strict.perms=false -c /usr/share/filebeat/filebeat.yml"
+  redis:
+    image: redis:6.2
+    container_name: redis
     ports:
-      - 32181:32181
-    environment:
-      - ZOOKEEPER_CLIENT_PORT=32181
-  kafka:
-    image: confluentinc/cp-kafka
-    hostname: kafka
-    container_name: kafka
-    ports:
-    - 9092:9092
-    - 29092:29092
+      - "6379:6379"
+
     depends_on:
-    - zookeeper
+      - filebeat
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.0
+    container_name: logstash
+    volumes:
+      #- ./ekl/logstash/config:/usr/share/logstash/config
+      - ./ekl/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./ekl/logstash/pipeline:/usr/share/logstash/pipeline
+    ports:
+      - "5044:5044"
+    depends_on:
+      #- elasticsearch
+      - redis
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    container_name: elasticsearch
     environment:
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:32181
-      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
-      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT_HOST://localhost:29092,PLAINTEXT://kafka:9092
-      - KAFKA_BROKER_ID=1
-#  schema-registry:
-#    image: confluentinc/cp-schema-registry
-#    hostname: schema-registry
-#    container_name: schema-registry
-#    depends_on:
-#      - kafka
-#      - zookeeper
-#    ports:
-#      - "8081:8081"
-#    environment:
-#      - SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=zookeeper:32181
-#      - SCHEMA_REGISTRY_HOST_NAME=schema-registry
-#      - SCHEMA_REGISTRY_DEBUG=true
+      - node.name=es01
+      - cluster.name=docker-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+volumes:
+  esdata:
+    driver: local
