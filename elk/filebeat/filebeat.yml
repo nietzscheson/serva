@@ -1,0 +1,37 @@
+filebeat.inputs:
+- type: docker
+  # enabled: true
+  containers:
+    path: "/var/lib/docker/containers"
+    stream: "all"
+    ids: ["eac1343720ccb28573289d381c1246828a2123e0307c5db0fdf1a149a4fd057f"]
+      # - "*"
+    #names:
+    #  - "app"
+  multiline:
+    pattern: '^[0-9]{4}[-/][0-9]{2}[-/][0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]{3}([-+][0-9]{4}|Z)?'
+    negate: true
+    match: after
+  processors:
+    - add_docker_metadata:
+        host: "unix:///var/run/docker.sock"
+        match_short_id: true
+    - drop_event:
+        when:
+          not:
+            equals:
+              docker.container.name: "app"
+- type: log
+  enabled: true
+  paths:
+    - /var/lib/docker/containers/*/*.log
+#    - /var/log/*.log
+
+# output.logstash:
+#   hosts: ["logstash:5044"~
+
+output.redis:
+  hosts: ["redis:6379"]
+  key: "filebeat"
+  db: 0
+  timeout: 5

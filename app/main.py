@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 from faker import Faker
 
@@ -6,7 +7,8 @@ fake = Faker()
 
 
 logging.basicConfig(
-    filename='/var/log/my_app.log',
+    # filename='/var/log/my_app.log',
+    #stream=sys.stdout,
     level=logging.INFO,
     format='%(asctime)s - %(message)s',
 )
