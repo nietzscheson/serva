@@ -6,15 +6,29 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./var/log:/var/log
-  filebeat:
-    #image: docker.elastic.co/beats/filebeat:7.17.0
-    image: docker.elastic.co/beats/filebeat:6.8.0
-    container_name: filebeat
+  filebeat68:
+    image: docker.elastic.co/beats/filebeat:6.8.23
+    container_name: filebeat68
     volumes:
-      - ./elk/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./elk/filebeat/filebeat68.yml:/usr/share/filebeat/filebeat.yml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
-      # - ./var/log:/var/log
+    depends_on:
+      - app
+      - redis
+    user: "root"
+
+    command: >
+      sh -c "chmod go-w /usr/share/filebeat/filebeat.yml &&
+             filebeat -e -strict.perms=false -c /usr/share/filebeat/filebeat.yml"
+
+  filebeat717:
+    image: docker.elastic.co/beats/filebeat:7.17.22
+    container_name: filebeat717
+    volumes:
+      - ./elk/filebeat/filebeat717.yml:/usr/share/filebeat/filebeat.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - app
       - redis
