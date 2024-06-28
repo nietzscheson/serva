@@ -14,3 +14,4 @@ db.sqlite*
 .db.sqlite*
 *.log
 .venv
+logs
