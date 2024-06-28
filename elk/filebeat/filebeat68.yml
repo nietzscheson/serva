@@ -14,7 +14,7 @@ filebeat.inputs:
     - add_docker_metadata:
         host: "unix:///var/run/docker.sock"
         match_short_id: true
-### The next configurations is just for testing locally
+#### The next configurations is just for testing locally
     - drop_event:
         when:
           not:
