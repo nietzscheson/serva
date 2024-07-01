@@ -28,7 +28,7 @@ filebeat.autodiscover:
               processors:
                 - add_docker_metadata:
                     host: "unix:///var/run/docker.sock"
-                    #match_short_id: true
+                    match_short_id: true
 
 processors:
 - add_cloud_metadata: ~
